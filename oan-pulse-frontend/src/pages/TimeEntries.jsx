@@ -17,9 +17,11 @@ const TimeEntries = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null); // Track which entry is being edited
   const [isTimerMode, setIsTimerMode] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [projectFilter, setProjectFilter] = useState(""); // New: project filter
   const intervalRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -27,6 +29,7 @@ const TimeEntries = () => {
     task_id: "",
     notes: "",
     hours: "",
+    is_billable: 1, // Changed from hardcoded to form field
   });
 
   useEffect(() => {
@@ -136,7 +139,7 @@ const TimeEntries = () => {
         project_id: Number(formData.project_id),
         entry_date: selectedDate + "T00:00:00Z",
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
-        is_billable: 1,
+        is_billable: Number(formData.is_billable),
         created_by: 1,
       };
 
@@ -147,15 +150,59 @@ const TimeEntries = () => {
         entryData.notes = formData.notes;
       }
 
-      await createTimeEntry(entryData);
-      setFormData({ project_id: "", task_id: "", notes: "", hours: "" });
-      setShowAddForm(false);
-      setIsTimerMode(false);
-      setElapsedTime(0);
+      if (editingEntry) {
+        // Update existing entry
+        await updateTimeEntry(editingEntry.time_entry_id, entryData);
+        setEditingEntry(null);
+      } else {
+        // Create new entry
+        await createTimeEntry(entryData);
+      }
+
+      resetForm();
       await fetchWeekData();
     } catch (error) {
-      console.error("Error creating entry:", error);
-      alert("Error creating time entry");
+      console.error("Error saving entry:", error);
+      alert("Error saving time entry");
+    }
+  };
+
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setFormData({
+      project_id: entry.project_id,
+      task_id: entry.task_id || "",
+      notes: entry.notes || "",
+      hours: entry.hours,
+      is_billable: entry.is_billable || 1,
+    });
+    setShowAddForm(true);
+    setIsTimerMode(false);
+  };
+
+  const handleDuplicate = async (entry) => {
+    try {
+      const entryData = {
+        user_id: 1,
+        project_id: Number(entry.project_id),
+        entry_date: selectedDate + "T00:00:00Z",
+        hours: Number(parseFloat(entry.hours).toFixed(2)),
+        is_billable: Number(entry.is_billable || 1),
+        created_by: 1,
+      };
+
+      if (entry.task_id) {
+        entryData.task_id = Number(entry.task_id);
+      }
+      if (entry.notes) {
+        entryData.notes = entry.notes + " (copy)";
+      }
+
+      await createTimeEntry(entryData);
+      await fetchWeekData();
+    } catch (error) {
+      console.error("Error duplicating entry:", error);
+      alert("Error duplicating time entry");
     }
   };
 
@@ -168,6 +215,15 @@ const TimeEntries = () => {
         console.error("Error deleting:", error);
       }
     }
+  };
+
+  const resetForm = () => {
+    setFormData({ project_id: "", task_id: "", notes: "", hours: "", is_billable: 1 });
+    setShowAddForm(false);
+    setIsTimerMode(false);
+    setIsRunning(false);
+    setElapsedTime(0);
+    setEditingEntry(null);
   };
 
   const getProjectName = (id) => {
@@ -198,6 +254,12 @@ const TimeEntries = () => {
   const formatHoursCompact = (hours) => {
     if (hours === 0) return "";
     return hours.toFixed(1);
+  };
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   };
 
   const getWeekDates = () => {
@@ -235,7 +297,31 @@ const TimeEntries = () => {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
-  const totalHours = timeEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
+  const getSelectedDateLabel = () => {
+    const today = new Date().toISOString().split("T")[0];
+    if (selectedDate === today) {
+      return "Today";
+    }
+    
+    const date = new Date(selectedDate);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+    
+    if (selectedDate === yesterdayStr) {
+      return "Yesterday";
+    }
+    
+    // Format as "Mon, Jan 15"
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  };
+
+  // Filter entries by project if filter is set
+  const filteredTimeEntries = projectFilter
+    ? timeEntries.filter(entry => entry.project_id === Number(projectFilter))
+    : timeEntries;
+
+  const totalHours = filteredTimeEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
   const weekDates = getWeekDates();
   const today = new Date().toISOString().split("T")[0];
   const filteredTasks = tasks.filter(t => !formData.project_id || t.project_id === Number(formData.project_id));
@@ -246,6 +332,7 @@ const TimeEntries = () => {
   }, 0);
 
   const TARGET_HOURS = 8;
+  const isToday = selectedDate === today;
 
   return (
     <Layout>
@@ -259,7 +346,9 @@ const TimeEntries = () => {
           </div>
           
           <div style={styles.rightActions}>
-            <button style={styles.todayBtn} onClick={goToToday}>Today</button>
+            {!isToday && (
+              <button style={styles.todayBtn} onClick={goToToday}>Go to Today</button>
+            )}
             <div style={styles.statsGroup}>
               <div style={styles.statBadge}>
                 <span style={styles.statLabel}>Week</span>
@@ -269,7 +358,7 @@ const TimeEntries = () => {
                 ...styles.totalBadge,
                 ...(totalHours > TARGET_HOURS ? styles.totalBadgeOvertime : {}),
               }}>
-                <span style={styles.totalLabel}>Today</span>
+                <span style={styles.totalLabel}>{getSelectedDateLabel()}</span>
                 <span style={styles.totalValue}>
                   {formatHours(totalHours)}
                   {totalHours > TARGET_HOURS && (
@@ -346,12 +435,12 @@ const TimeEntries = () => {
           })}
         </div>
 
-        {/* Add Entry Form */}
+        {/* Add/Edit Entry Form */}
         {showAddForm && (
           <div style={styles.addCard}>
             <div style={styles.addHeader}>
               <h3 style={styles.addTitle}>
-                {isTimerMode ? (isRunning ? "Timer Running" : "Timer") : "Add Time"}
+                {editingEntry ? "Edit Time Entry" : (isTimerMode ? (isRunning ? "Timer Running" : "Timer") : "Add Time")}
               </h3>
               {isTimerMode && isRunning && (
                 <div style={styles.timerDisplay}>{formatTime(elapsedTime)}</div>
@@ -398,27 +487,41 @@ const TimeEntries = () => {
                 disabled={isRunning}
               />
 
-              {!isTimerMode && (
-                <input
-                  type="number"
-                  placeholder="Hours (e.g., 2.5)"
-                  value={formData.hours}
-                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                  style={styles.hoursInput}
-                  step="0.25"
-                  min="0"
-                />
-              )}
+              <div style={styles.formRow}>
+                {!isTimerMode && (
+                  <input
+                    type="number"
+                    placeholder="Hours (e.g., 2.5)"
+                    value={formData.hours}
+                    onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                    style={styles.hoursInput}
+                    step="0.25"
+                    min="0"
+                  />
+                )}
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={formData.is_billable === 1}
+                    onChange={(e) => setFormData({ ...formData, is_billable: e.target.checked ? 1 : 0 })}
+                    style={styles.checkbox}
+                    disabled={isRunning}
+                  />
+                  <span style={styles.checkboxText}>Billable</span>
+                </label>
+              </div>
 
               <div style={styles.formActions}>
-                {!isTimerMode ? (
+                {!isTimerMode || editingEntry ? (
                   <>
                     <button style={styles.primaryBtn} onClick={() => handleSave()}>
-                      Save Entry
+                      {editingEntry ? "Update Entry" : "Save Entry"}
                     </button>
-                    <button style={styles.secondaryBtn} onClick={handleStartTimer}>
-                      <span style={styles.btnIcon}>▶</span> Start Timer Instead
-                    </button>
+                    {!editingEntry && (
+                      <button style={styles.secondaryBtn} onClick={handleStartTimer}>
+                        <span style={styles.btnIcon}>▶</span> Start Timer Instead
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -446,13 +549,7 @@ const TimeEntries = () => {
                 )}
                 <button
                   style={styles.cancelBtn}
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setIsTimerMode(false);
-                    setIsRunning(false);
-                    setElapsedTime(0);
-                    setFormData({ project_id: "", task_id: "", notes: "", hours: "" });
-                  }}
+                  onClick={resetForm}
                   disabled={isRunning}
                 >
                   Cancel
@@ -464,26 +561,48 @@ const TimeEntries = () => {
 
         {/* Entries List */}
         <div style={styles.entriesContainer}>
-          {!showAddForm && (
-            <button style={styles.addBtn} onClick={() => setShowAddForm(true)}>
-              <span style={styles.addIcon}>+</span>
-              <span>Add time entry</span>
-            </button>
-          )}
+          <div style={styles.entriesHeader}>
+            {!showAddForm && (
+              <button style={styles.addBtn} onClick={() => setShowAddForm(true)}>
+                <span style={styles.addIcon}>+</span>
+                <span>Add time entry</span>
+              </button>
+            )}
+
+            {/* Project Filter */}
+            {timeEntries.length > 0 && (
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="">All Projects</option>
+                {projects.map((p) => (
+                  <option key={p.project_id} value={p.project_id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {loading ? (
             <div style={styles.loading}>
               <div style={styles.spinner} />
             </div>
-          ) : timeEntries.length === 0 ? (
+          ) : filteredTimeEntries.length === 0 ? (
             <div style={styles.empty}>
               <div style={styles.emptyIcon}>📝</div>
-              <p style={styles.emptyText}>No time entries for this day</p>
-              <p style={styles.emptyHint}>Click "Add time entry" to get started</p>
+              <p style={styles.emptyText}>
+                {projectFilter ? "No entries for this project" : "No time entries for this day"}
+              </p>
+              <p style={styles.emptyHint}>
+                {projectFilter ? "Try selecting a different project" : "Click 'Add time entry' to get started"}
+              </p>
             </div>
           ) : (
             <div style={styles.entriesList}>
-              {timeEntries.map((entry) => (
+              {filteredTimeEntries.map((entry) => (
                 <div key={entry.time_entry_id} style={styles.entryCard}>
                   <div style={styles.entryMain}>
                     <div style={styles.entryInfo}>
@@ -496,22 +615,43 @@ const TimeEntries = () => {
                             <span style={styles.taskName}>{getTaskName(entry.task_id)}</span>
                           </>
                         )}
+                        {entry.is_billable === 1 && (
+                          <span style={styles.billableBadge}>💰 Billable</span>
+                        )}
+                        <span style={styles.timestamp}>{formatDateTime(entry.created_at)}</span>
                       </div>
                       {entry.notes && (
                         <div style={styles.entryNotes}>
-                          {entry.notes.replace(/\s*\[Start:.*?\]\s*/, "")}
+                          {entry.notes.replace(/\s*\[Start:.*?\]\s*/, "").replace(/\s*\(copy\)\s*$/, "")}
+                          {entry.notes.includes("(copy)") && <span style={styles.copyBadge}> (copy)</span>}
                         </div>
                       )}
                     </div>
-                    <div style={styles.entryMeta}>
+                    <div style={styles.entryActions}>
                       <span style={styles.entryHours}>{formatHours(entry.hours)}</span>
-                      <button
-                        style={styles.deleteIconBtn}
-                        onClick={() => handleDelete(entry.time_entry_id)}
-                        title="Delete"
-                      >
-                        ×
-                      </button>
+                      <div style={styles.actionButtons}>
+                        <button
+                          style={styles.actionBtn}
+                          onClick={() => handleEdit(entry)}
+                          title="Edit"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          style={styles.actionBtn}
+                          onClick={() => handleDuplicate(entry)}
+                          title="Duplicate"
+                        >
+                          📋
+                        </button>
+                        <button
+                          style={styles.deleteIconBtn}
+                          onClick={() => handleDelete(entry.time_entry_id)}
+                          title="Delete"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -569,14 +709,14 @@ const styles = {
     gap: "16px",
   },
   todayBtn: {
-    background: "white",
-    border: "1px solid var(--border-color)",
+    background: "var(--primary-color)",
+    border: "none",
     borderRadius: "8px",
     padding: "8px 16px",
     fontSize: "14px",
     fontWeight: "500",
     cursor: "pointer",
-    color: "var(--text-primary)",
+    color: "white",
     transition: "all 0.2s",
   },
   statsGroup: {
@@ -615,6 +755,7 @@ const styles = {
     alignItems: "center",
     gap: "2px",
     boxShadow: "0 4px 12px rgba(246, 130, 31, 0.25)",
+    minWidth: "120px",
   },
   totalBadgeOvertime: {
     background: "linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)",
@@ -806,6 +947,27 @@ const styles = {
     transition: "all 0.2s",
     fontFamily: "monospace",
   },
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 16px",
+    border: "2px solid var(--border-color)",
+    borderRadius: "10px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    backgroundColor: "white",
+  },
+  checkbox: {
+    width: "18px",
+    height: "18px",
+    cursor: "pointer",
+  },
+  checkboxText: {
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "var(--text-primary)",
+  },
   formActions: {
     display: "flex",
     gap: "12px",
@@ -883,8 +1045,14 @@ const styles = {
   entriesContainer: {
     minHeight: "300px",
   },
+  entriesHeader: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    marginBottom: "16px",
+  },
   addBtn: {
-    width: "100%",
+    flex: 1,
     background: "white",
     border: "2px dashed var(--border-color)",
     borderRadius: "12px",
@@ -897,12 +1065,21 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    marginBottom: "16px",
     transition: "all 0.2s",
   },
   addIcon: {
     fontSize: "20px",
     fontWeight: "300",
+  },
+  filterSelect: {
+    padding: "12px 16px",
+    border: "2px solid var(--border-color)",
+    borderRadius: "10px",
+    fontSize: "14px",
+    fontFamily: "inherit",
+    backgroundColor: "white",
+    cursor: "pointer",
+    minWidth: "200px",
   },
   loading: {
     display: "flex",
@@ -987,22 +1164,55 @@ const styles = {
     fontSize: "14px",
     color: "var(--text-secondary)",
   },
+  billableBadge: {
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#4CAF50",
+    background: "#e8f5e9",
+    padding: "2px 8px",
+    borderRadius: "8px",
+  },
+  timestamp: {
+    fontSize: "11px",
+    color: "var(--text-light)",
+    marginLeft: "auto",
+  },
   entryNotes: {
     fontSize: "14px",
     color: "var(--text-secondary)",
     lineHeight: "1.5",
     paddingLeft: "16px",
   },
-  entryMeta: {
+  copyBadge: {
+    fontSize: "11px",
+    color: "var(--text-light)",
+    fontStyle: "italic",
+  },
+  entryActions: {
     display: "flex",
-    alignItems: "center",
-    gap: "12px",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "8px",
   },
   entryHours: {
     fontSize: "16px",
     fontWeight: "700",
     fontFamily: "monospace",
     color: "var(--primary-color)",
+  },
+  actionButtons: {
+    display: "flex",
+    gap: "4px",
+  },
+  actionBtn: {
+    background: "transparent",
+    border: "none",
+    fontSize: "16px",
+    cursor: "pointer",
+    padding: "4px 8px",
+    borderRadius: "6px",
+    transition: "all 0.2s",
+    lineHeight: 1,
   },
   deleteIconBtn: {
     background: "transparent",
