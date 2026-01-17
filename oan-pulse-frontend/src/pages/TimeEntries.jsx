@@ -11,6 +11,7 @@ import Layout from "../components/common/Layout";
 
 const TimeEntries = () => {
   const [timeEntries, setTimeEntries] = useState([]);
+  const [weekEntries, setWeekEntries] = useState({}); // Store all week's entries
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,11 +32,11 @@ const TimeEntries = () => {
   useEffect(() => {
     fetchProjects();
     fetchTasks();
-    fetchData();
+    fetchWeekData();
   }, []);
 
   useEffect(() => {
-    fetchData();
+    fetchWeekData();
   }, [selectedDate]);
 
   useEffect(() => {
@@ -73,13 +74,31 @@ const TimeEntries = () => {
     }
   };
 
-  const fetchData = async () => {
+  const fetchWeekData = async () => {
     setLoading(true);
     try {
-      const entriesData = await getTimeEntries({ date: selectedDate });
-      setTimeEntries(entriesData);
+      // Fetch entries for the entire week
+      const weekDates = getWeekDates();
+      const weekData = {};
+      
+      // Fetch all days in parallel
+      await Promise.all(
+        weekDates.map(async (date) => {
+          const dateStr = date.toISOString().split("T")[0];
+          try {
+            const entries = await getTimeEntries({ date: dateStr });
+            weekData[dateStr] = entries;
+          } catch (error) {
+            console.error(`Error fetching entries for ${dateStr}:`, error);
+            weekData[dateStr] = [];
+          }
+        })
+      );
+      
+      setWeekEntries(weekData);
+      setTimeEntries(weekData[selectedDate] || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching week data:", error);
     } finally {
       setLoading(false);
     }
@@ -133,7 +152,7 @@ const TimeEntries = () => {
       setShowAddForm(false);
       setIsTimerMode(false);
       setElapsedTime(0);
-      await fetchData();
+      await fetchWeekData();
     } catch (error) {
       console.error("Error creating entry:", error);
       alert("Error creating time entry");
@@ -144,7 +163,7 @@ const TimeEntries = () => {
     if (window.confirm("Delete this entry?")) {
       try {
         await deleteTimeEntry(id);
-        await fetchData();
+        await fetchWeekData();
       } catch (error) {
         console.error("Error deleting:", error);
       }
@@ -176,6 +195,15 @@ const TimeEntries = () => {
     return `${h}h ${m}m`;
   };
 
+  const formatHoursCompact = (hours) => {
+    if (hours === 0) return "";
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    if (m === 0) return `${h}h`;
+    if (h === 0) return `${m}m`;
+    return `${h}h ${m}m`;
+  };
+
   const getWeekDates = () => {
     const current = new Date(selectedDate);
     const week = [];
@@ -189,6 +217,11 @@ const TimeEntries = () => {
     }
     
     return week;
+  };
+
+  const getDayHours = (dateStr) => {
+    const entries = weekEntries[dateStr] || [];
+    return entries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
   };
 
   const navigateWeek = (direction) => {
@@ -211,6 +244,11 @@ const TimeEntries = () => {
   const today = new Date().toISOString().split("T")[0];
   const filteredTasks = tasks.filter(t => !formData.project_id || t.project_id === Number(formData.project_id));
 
+  // Calculate week total
+  const weekTotal = Object.values(weekEntries).reduce((sum, entries) => {
+    return sum + entries.reduce((daySum, entry) => daySum + parseFloat(entry.hours || 0), 0);
+  }, 0);
+
   return (
     <Layout>
       <div style={styles.container}>
@@ -224,14 +262,20 @@ const TimeEntries = () => {
           
           <div style={styles.rightActions}>
             <button style={styles.todayBtn} onClick={goToToday}>Today</button>
-            <div style={styles.totalBadge}>
-              <span style={styles.totalLabel}>Total</span>
-              <span style={styles.totalValue}>{formatHours(totalHours)}</span>
+            <div style={styles.statsGroup}>
+              <div style={styles.statBadge}>
+                <span style={styles.statLabel}>Week</span>
+                <span style={styles.statValue}>{formatHours(weekTotal)}</span>
+              </div>
+              <div style={styles.totalBadge}>
+                <span style={styles.totalLabel}>Today</span>
+                <span style={styles.totalValue}>{formatHours(totalHours)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Week Calendar */}
+        {/* Week Calendar with Hours */}
         <div style={styles.weekGrid}>
           {weekDates.map((date, idx) => {
             const dateStr = date.toISOString().split("T")[0];
@@ -239,6 +283,8 @@ const TimeEntries = () => {
             const isToday = dateStr === today;
             const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
             const dayNum = date.getDate();
+            const dayHours = getDayHours(dateStr);
+            const hasHours = dayHours > 0;
             
             return (
               <button
@@ -252,6 +298,14 @@ const TimeEntries = () => {
               >
                 <div style={styles.dayName}>{dayName}</div>
                 <div style={styles.dayNumber}>{dayNum}</div>
+                {hasHours && (
+                  <div style={{
+                    ...styles.dayHours,
+                    ...(isSelected ? styles.dayHoursActive : {}),
+                  }}>
+                    {formatHoursCompact(dayHours)}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -490,10 +544,37 @@ const styles = {
     color: "var(--text-primary)",
     transition: "all 0.2s",
   },
+  statsGroup: {
+    display: "flex",
+    gap: "12px",
+  },
+  statBadge: {
+    background: "white",
+    border: "2px solid var(--border-color)",
+    padding: "8px 16px",
+    borderRadius: "10px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2px",
+  },
+  statLabel: {
+    fontSize: "10px",
+    fontWeight: "600",
+    color: "var(--text-secondary)",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  statValue: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "var(--text-primary)",
+    fontFamily: "monospace",
+  },
   totalBadge: {
     background: "linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%)",
-    padding: "10px 20px",
-    borderRadius: "12px",
+    padding: "8px 16px",
+    borderRadius: "10px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -509,7 +590,7 @@ const styles = {
     letterSpacing: "0.5px",
   },
   totalValue: {
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "700",
     color: "white",
     fontFamily: "monospace",
@@ -524,13 +605,15 @@ const styles = {
     background: "white",
     border: "2px solid var(--border-light)",
     borderRadius: "12px",
-    padding: "16px 12px",
+    padding: "12px 8px",
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     transition: "all 0.2s",
+    minHeight: "90px",
+    position: "relative",
   },
   dayCardActive: {
     background: "var(--primary-color)",
@@ -553,6 +636,19 @@ const styles = {
   dayNumber: {
     fontSize: "20px",
     fontWeight: "700",
+  },
+  dayHours: {
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "var(--primary-color)",
+    background: "var(--primary-light)",
+    padding: "4px 8px",
+    borderRadius: "6px",
+    marginTop: "4px",
+  },
+  dayHoursActive: {
+    color: "white",
+    background: "rgba(255, 255, 255, 0.25)",
   },
   addCard: {
     background: "white",
