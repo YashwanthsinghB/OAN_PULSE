@@ -29,7 +29,6 @@ const TimeEntries = () => {
     task_id: "",
     notes: "",
     hours: "",
-    is_billable: 1, // Changed from hardcoded to form field
   });
 
   useEffect(() => {
@@ -134,12 +133,16 @@ const TimeEntries = () => {
     }
 
     try {
+      // Get selected project to determine billable status
+      const selectedProject = projects.find(p => p.project_id === Number(formData.project_id));
+      const isBillable = selectedProject?.is_billable || 0;
+
       const entryData = {
         user_id: 1,
         project_id: Number(formData.project_id),
         entry_date: selectedDate + "T00:00:00Z",
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
-        is_billable: Number(formData.is_billable),
+        is_billable: isBillable, // Inherited from project
         created_by: 1,
       };
 
@@ -174,7 +177,6 @@ const TimeEntries = () => {
       task_id: entry.task_id || "",
       notes: entry.notes || "",
       hours: entry.hours,
-      is_billable: entry.is_billable || 1,
     });
     setShowAddForm(true);
     setIsTimerMode(false);
@@ -182,12 +184,16 @@ const TimeEntries = () => {
 
   const handleDuplicate = async (entry) => {
     try {
+      // Get project to determine billable status
+      const selectedProject = projects.find(p => p.project_id === Number(entry.project_id));
+      const isBillable = selectedProject?.is_billable || 0;
+
       const entryData = {
         user_id: 1,
         project_id: Number(entry.project_id),
         entry_date: selectedDate + "T00:00:00Z",
         hours: Number(parseFloat(entry.hours).toFixed(2)),
-        is_billable: Number(entry.is_billable || 1),
+        is_billable: isBillable, // Inherited from project
         created_by: 1,
       };
 
@@ -218,7 +224,7 @@ const TimeEntries = () => {
   };
 
   const resetForm = () => {
-    setFormData({ project_id: "", task_id: "", notes: "", hours: "", is_billable: 1 });
+    setFormData({ project_id: "", task_id: "", notes: "", hours: "" });
     setShowAddForm(false);
     setIsTimerMode(false);
     setIsRunning(false);
@@ -487,29 +493,17 @@ const TimeEntries = () => {
                 disabled={isRunning}
               />
 
-              <div style={styles.formRow}>
-                {!isTimerMode && (
-                  <input
-                    type="number"
-                    placeholder="Hours (e.g., 2.5)"
-                    value={formData.hours}
-                    onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                    style={styles.hoursInput}
-                    step="0.25"
-                    min="0"
-                  />
-                )}
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={formData.is_billable === 1}
-                    onChange={(e) => setFormData({ ...formData, is_billable: e.target.checked ? 1 : 0 })}
-                    style={styles.checkbox}
-                    disabled={isRunning}
-                  />
-                  <span style={styles.checkboxText}>Billable</span>
-                </label>
-              </div>
+              {!isTimerMode && (
+                <input
+                  type="number"
+                  placeholder="Hours (e.g., 2.5)"
+                  value={formData.hours}
+                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                  style={styles.hoursInput}
+                  step="0.25"
+                  min="0"
+                />
+              )}
 
               <div style={styles.formActions}>
                 {!isTimerMode || editingEntry ? (
@@ -943,30 +937,8 @@ const styles = {
     border: "2px solid var(--border-color)",
     borderRadius: "10px",
     fontSize: "14px",
-    fontFamily: "inherit",
-    transition: "all 0.2s",
     fontFamily: "monospace",
-  },
-  checkboxLabel: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "12px 16px",
-    border: "2px solid var(--border-color)",
-    borderRadius: "10px",
-    cursor: "pointer",
     transition: "all 0.2s",
-    backgroundColor: "white",
-  },
-  checkbox: {
-    width: "18px",
-    height: "18px",
-    cursor: "pointer",
-  },
-  checkboxText: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "var(--text-primary)",
   },
   formActions: {
     display: "flex",
