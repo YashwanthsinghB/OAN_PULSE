@@ -197,11 +197,7 @@ const TimeEntries = () => {
 
   const formatHoursCompact = (hours) => {
     if (hours === 0) return "";
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    if (m === 0) return `${h}h`;
-    if (h === 0) return `${m}m`;
-    return `${h}h ${m}m`;
+    return hours.toFixed(1);
   };
 
   const getWeekDates = () => {
@@ -275,7 +271,7 @@ const TimeEntries = () => {
           </div>
         </div>
 
-        {/* Week Calendar with Hours */}
+        {/* Sleek Week Calendar */}
         <div style={styles.weekGrid}>
           {weekDates.map((date, idx) => {
             const dateStr = date.toISOString().split("T")[0];
@@ -285,6 +281,8 @@ const TimeEntries = () => {
             const dayNum = date.getDate();
             const dayHours = getDayHours(dateStr);
             const hasHours = dayHours > 0;
+            const targetHours = 8;
+            const progressPercent = Math.min((dayHours / targetHours) * 100, 100);
             
             return (
               <button
@@ -296,14 +294,25 @@ const TimeEntries = () => {
                   ...(isToday && !isSelected ? styles.dayCardToday : {}),
                 }}
               >
-                <div style={styles.dayName}>{dayName}</div>
+                <div style={styles.dayHeader}>
+                  <span style={styles.dayName}>{dayName}</span>
+                  {hasHours && (
+                    <span style={{
+                      ...styles.hoursChip,
+                      ...(isSelected ? styles.hoursChipActive : {}),
+                    }}>
+                      {formatHoursCompact(dayHours)}h
+                    </span>
+                  )}
+                </div>
                 <div style={styles.dayNumber}>{dayNum}</div>
                 {hasHours && (
-                  <div style={{
-                    ...styles.dayHours,
-                    ...(isSelected ? styles.dayHoursActive : {}),
-                  }}>
-                    {formatHoursCompact(dayHours)}
+                  <div style={styles.progressBar}>
+                    <div style={{
+                      ...styles.progressFill,
+                      width: `${progressPercent}%`,
+                      ...(isSelected ? styles.progressFillActive : {}),
+                    }} />
                   </div>
                 )}
               </button>
@@ -605,14 +614,14 @@ const styles = {
     background: "white",
     border: "2px solid var(--border-light)",
     borderRadius: "12px",
-    padding: "12px 8px",
+    padding: "16px 12px",
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    gap: "4px",
+    alignItems: "stretch",
+    gap: "8px",
     transition: "all 0.2s",
-    minHeight: "90px",
+    minHeight: "100px",
     position: "relative",
   },
   dayCardActive: {
@@ -626,6 +635,12 @@ const styles = {
     borderColor: "var(--primary-color)",
     borderWidth: "2px",
   },
+  dayHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "8px",
+  },
   dayName: {
     fontSize: "11px",
     fontWeight: "600",
@@ -633,22 +648,40 @@ const styles = {
     letterSpacing: "0.5px",
     opacity: 0.7,
   },
-  dayNumber: {
-    fontSize: "20px",
+  hoursChip: {
+    fontSize: "11px",
     fontWeight: "700",
-  },
-  dayHours: {
-    fontSize: "12px",
-    fontWeight: "600",
     color: "var(--primary-color)",
     background: "var(--primary-light)",
-    padding: "4px 8px",
-    borderRadius: "6px",
-    marginTop: "4px",
+    padding: "3px 8px",
+    borderRadius: "10px",
+    fontFamily: "monospace",
   },
-  dayHoursActive: {
+  hoursChipActive: {
     color: "white",
-    background: "rgba(255, 255, 255, 0.25)",
+    background: "rgba(255, 255, 255, 0.3)",
+  },
+  dayNumber: {
+    fontSize: "24px",
+    fontWeight: "700",
+    lineHeight: 1,
+  },
+  progressBar: {
+    width: "100%",
+    height: "4px",
+    background: "var(--border-light)",
+    borderRadius: "2px",
+    overflow: "hidden",
+    marginTop: "auto",
+  },
+  progressFill: {
+    height: "100%",
+    background: "var(--primary-color)",
+    transition: "width 0.3s ease",
+    borderRadius: "2px",
+  },
+  progressFillActive: {
+    background: "white",
   },
   addCard: {
     background: "white",
