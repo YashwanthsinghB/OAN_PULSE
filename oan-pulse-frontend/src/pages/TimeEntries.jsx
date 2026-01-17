@@ -245,6 +245,8 @@ const TimeEntries = () => {
     return sum + entries.reduce((daySum, entry) => daySum + parseFloat(entry.hours || 0), 0);
   }, 0);
 
+  const TARGET_HOURS = 8;
+
   return (
     <Layout>
       <div style={styles.container}>
@@ -263,9 +265,17 @@ const TimeEntries = () => {
                 <span style={styles.statLabel}>Week</span>
                 <span style={styles.statValue}>{formatHours(weekTotal)}</span>
               </div>
-              <div style={styles.totalBadge}>
+              <div style={{
+                ...styles.totalBadge,
+                ...(totalHours > TARGET_HOURS ? styles.totalBadgeOvertime : {}),
+              }}>
                 <span style={styles.totalLabel}>Today</span>
-                <span style={styles.totalValue}>{formatHours(totalHours)}</span>
+                <span style={styles.totalValue}>
+                  {formatHours(totalHours)}
+                  {totalHours > TARGET_HOURS && (
+                    <span style={styles.overtimeIndicator}> +{formatHours(totalHours - TARGET_HOURS)}</span>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -281,8 +291,11 @@ const TimeEntries = () => {
             const dayNum = date.getDate();
             const dayHours = getDayHours(dateStr);
             const hasHours = dayHours > 0;
-            const targetHours = 8;
-            const progressPercent = Math.min((dayHours / targetHours) * 100, 100);
+            const isOvertime = dayHours > TARGET_HOURS;
+            const regularHours = Math.min(dayHours, TARGET_HOURS);
+            const overtimeHours = Math.max(0, dayHours - TARGET_HOURS);
+            const regularPercent = (regularHours / TARGET_HOURS) * 100;
+            const overtimePercent = (overtimeHours / TARGET_HOURS) * 100;
             
             return (
               <button
@@ -300,19 +313,32 @@ const TimeEntries = () => {
                     <span style={{
                       ...styles.hoursChip,
                       ...(isSelected ? styles.hoursChipActive : {}),
+                      ...(isOvertime && !isSelected ? styles.hoursChipOvertime : {}),
                     }}>
                       {formatHoursCompact(dayHours)}h
+                      {isOvertime && <span style={styles.overtimeIcon}>⚡</span>}
                     </span>
                   )}
                 </div>
                 <div style={styles.dayNumber}>{dayNum}</div>
                 {hasHours && (
-                  <div style={styles.progressBar}>
-                    <div style={{
-                      ...styles.progressFill,
-                      width: `${progressPercent}%`,
-                      ...(isSelected ? styles.progressFillActive : {}),
-                    }} />
+                  <div style={styles.progressContainer}>
+                    <div style={styles.progressBar}>
+                      {/* Regular hours (up to 8) */}
+                      <div style={{
+                        ...styles.progressFill,
+                        width: `${regularPercent}%`,
+                        ...(isSelected ? styles.progressFillActive : {}),
+                      }} />
+                      {/* Overtime hours (beyond 8) */}
+                      {isOvertime && (
+                        <div style={{
+                          ...styles.progressFillOvertime,
+                          width: `${Math.min(overtimePercent, 100)}%`,
+                          ...(isSelected ? styles.progressFillOvertimeActive : {}),
+                        }} />
+                      )}
+                    </div>
                   </div>
                 )}
               </button>
@@ -590,6 +616,10 @@ const styles = {
     gap: "2px",
     boxShadow: "0 4px 12px rgba(246, 130, 31, 0.25)",
   },
+  totalBadgeOvertime: {
+    background: "linear-gradient(135deg, #00bcd4 0%, #0097a7 100%)",
+    boxShadow: "0 4px 12px rgba(0, 188, 212, 0.3)",
+  },
   totalLabel: {
     fontSize: "10px",
     fontWeight: "600",
@@ -603,6 +633,13 @@ const styles = {
     fontWeight: "700",
     color: "white",
     fontFamily: "monospace",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  overtimeIndicator: {
+    fontSize: "11px",
+    opacity: 0.9,
   },
   weekGrid: {
     display: "grid",
@@ -656,15 +693,29 @@ const styles = {
     padding: "3px 8px",
     borderRadius: "10px",
     fontFamily: "monospace",
+    display: "flex",
+    alignItems: "center",
+    gap: "3px",
   },
   hoursChipActive: {
     color: "white",
     background: "rgba(255, 255, 255, 0.3)",
   },
+  hoursChipOvertime: {
+    color: "#00bcd4",
+    background: "#e0f7fa",
+  },
+  overtimeIcon: {
+    fontSize: "10px",
+  },
   dayNumber: {
     fontSize: "24px",
     fontWeight: "700",
     lineHeight: 1,
+  },
+  progressContainer: {
+    width: "100%",
+    marginTop: "auto",
   },
   progressBar: {
     width: "100%",
@@ -672,16 +723,23 @@ const styles = {
     background: "var(--border-light)",
     borderRadius: "2px",
     overflow: "hidden",
-    marginTop: "auto",
+    display: "flex",
   },
   progressFill: {
     height: "100%",
     background: "var(--primary-color)",
     transition: "width 0.3s ease",
-    borderRadius: "2px",
   },
   progressFillActive: {
     background: "white",
+  },
+  progressFillOvertime: {
+    height: "100%",
+    background: "#00bcd4",
+    transition: "width 0.3s ease",
+  },
+  progressFillOvertimeActive: {
+    background: "rgba(255, 255, 255, 0.6)",
   },
   addCard: {
     background: "white",
