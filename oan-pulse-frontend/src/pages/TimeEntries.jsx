@@ -17,7 +17,9 @@ const TimeEntries = () => {
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null); // Track which entry is being edited
   const [isTimerMode, setIsTimerMode] = useState(false);
@@ -84,7 +86,7 @@ const TimeEntries = () => {
       // Fetch entries for the entire week
       const weekDates = getWeekDates();
       const weekData = {};
-      
+
       // Fetch all days in parallel
       await Promise.all(
         weekDates.map(async (date) => {
@@ -98,7 +100,7 @@ const TimeEntries = () => {
           }
         })
       );
-      
+
       setWeekEntries(weekData);
       setTimeEntries(weekData[selectedDate] || []);
     } catch (error) {
@@ -128,7 +130,7 @@ const TimeEntries = () => {
 
   const handleSave = async (timerHours = null) => {
     const hoursToSave = timerHours || formData.hours;
-    
+
     if (!formData.project_id || !hoursToSave) {
       alert("Project and hours are required");
       return;
@@ -136,7 +138,9 @@ const TimeEntries = () => {
 
     try {
       // Get selected project to determine billable status
-      const selectedProject = projects.find(p => p.project_id === Number(formData.project_id));
+      const selectedProject = projects.find(
+        (p) => p.project_id === Number(formData.project_id)
+      );
       const isBillable = selectedProject?.is_billable || 0;
 
       const entryData = {
@@ -187,7 +191,9 @@ const TimeEntries = () => {
   const handleDuplicate = async (entry) => {
     try {
       // Get project to determine billable status
-      const selectedProject = projects.find(p => p.project_id === Number(entry.project_id));
+      const selectedProject = projects.find(
+        (p) => p.project_id === Number(entry.project_id)
+      );
       const isBillable = selectedProject?.is_billable || 0;
 
       const entryData = {
@@ -249,7 +255,10 @@ const TimeEntries = () => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(
+      2,
+      "0"
+    )}:${String(s).padStart(2, "0")}`;
   };
 
   const formatHours = (hours) => {
@@ -267,7 +276,10 @@ const TimeEntries = () => {
   const formatDateTime = (dateStr) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   const getWeekDates = () => {
@@ -275,24 +287,27 @@ const TimeEntries = () => {
     const week = [];
     const day = current.getDay();
     const diff = current.getDate() - day + (day === 0 ? -6 : 1);
-    
+
     for (let i = 0; i < 7; i++) {
       const weekDate = new Date(current);
       weekDate.setDate(diff + i);
       week.push(new Date(weekDate));
     }
-    
+
     return week;
   };
 
   const getDayHours = (dateStr) => {
     const entries = weekEntries[dateStr] || [];
-    return entries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
+    return entries.reduce(
+      (sum, entry) => sum + parseFloat(entry.hours || 0),
+      0
+    );
   };
 
   const navigateWeek = (direction) => {
     const current = new Date(selectedDate);
-    current.setDate(current.getDate() + (direction * 7));
+    current.setDate(current.getDate() + direction * 7);
     setSelectedDate(current.toISOString().split("T")[0]);
   };
 
@@ -310,33 +325,48 @@ const TimeEntries = () => {
     if (selectedDate === today) {
       return "Today";
     }
-    
+
     const date = new Date(selectedDate);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
-    
+
     if (selectedDate === yesterdayStr) {
       return "Yesterday";
     }
-    
+
     // Format as "Mon, Jan 15"
-    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   // Filter entries by project if filter is set
   const filteredTimeEntries = projectFilter
-    ? timeEntries.filter(entry => entry.project_id === Number(projectFilter))
+    ? timeEntries.filter((entry) => entry.project_id === Number(projectFilter))
     : timeEntries;
 
-  const totalHours = filteredTimeEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || 0), 0);
+  const totalHours = filteredTimeEntries.reduce(
+    (sum, entry) => sum + parseFloat(entry.hours || 0),
+    0
+  );
   const weekDates = getWeekDates();
   const today = new Date().toISOString().split("T")[0];
-  const filteredTasks = tasks.filter(t => !formData.project_id || t.project_id === Number(formData.project_id));
+  const filteredTasks = tasks.filter(
+    (t) => !formData.project_id || t.project_id === Number(formData.project_id)
+  );
 
   // Calculate week total
   const weekTotal = Object.values(weekEntries).reduce((sum, entries) => {
-    return sum + entries.reduce((daySum, entry) => daySum + parseFloat(entry.hours || 0), 0);
+    return (
+      sum +
+      entries.reduce(
+        (daySum, entry) => daySum + parseFloat(entry.hours || 0),
+        0
+      )
+    );
   }, 0);
 
   const TARGET_HOURS = 8;
@@ -348,29 +378,42 @@ const TimeEntries = () => {
         {/* Top Navigation Bar */}
         <div style={styles.navBar}>
           <div style={styles.monthSection}>
-            <button style={styles.navArrow} onClick={() => navigateWeek(-1)}>‹</button>
+            <button style={styles.navArrow} onClick={() => navigateWeek(-1)}>
+              ‹
+            </button>
             <h1 style={styles.monthTitle}>{getMonthYear()}</h1>
-            <button style={styles.navArrow} onClick={() => navigateWeek(1)}>›</button>
+            <button style={styles.navArrow} onClick={() => navigateWeek(1)}>
+              ›
+            </button>
           </div>
-          
+
           <div style={styles.rightActions}>
             {!isToday && (
-              <button style={styles.todayBtn} onClick={goToToday}>Go to Today</button>
+              <button style={styles.todayBtn} onClick={goToToday}>
+                Go to Today
+              </button>
             )}
             <div style={styles.statsGroup}>
               <div style={styles.statBadge}>
                 <span style={styles.statLabel}>Week</span>
                 <span style={styles.statValue}>{formatHours(weekTotal)}</span>
               </div>
-              <div style={{
-                ...styles.totalBadge,
-                ...(totalHours > TARGET_HOURS ? styles.totalBadgeOvertime : {}),
-              }}>
+              <div
+                style={{
+                  ...styles.totalBadge,
+                  ...(totalHours > TARGET_HOURS
+                    ? styles.totalBadgeOvertime
+                    : {}),
+                }}
+              >
                 <span style={styles.totalLabel}>{getSelectedDateLabel()}</span>
                 <span style={styles.totalValue}>
                   {formatHours(totalHours)}
                   {totalHours > TARGET_HOURS && (
-                    <span style={styles.overtimeIndicator}> +{formatHours(totalHours - TARGET_HOURS)}</span>
+                    <span style={styles.overtimeIndicator}>
+                      {" "}
+                      +{formatHours(totalHours - TARGET_HOURS)}
+                    </span>
                   )}
                 </span>
               </div>
@@ -384,7 +427,9 @@ const TimeEntries = () => {
             const dateStr = date.toISOString().split("T")[0];
             const isSelected = dateStr === selectedDate;
             const isToday = dateStr === today;
-            const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+            const dayName = date.toLocaleDateString("en-US", {
+              weekday: "short",
+            });
             const dayNum = date.getDate();
             const dayHours = getDayHours(dateStr);
             const hasHours = dayHours > 0;
@@ -393,7 +438,7 @@ const TimeEntries = () => {
             const overtimeHours = Math.max(0, dayHours - TARGET_HOURS);
             const regularPercent = (regularHours / TARGET_HOURS) * 100;
             const overtimePercent = (overtimeHours / TARGET_HOURS) * 100;
-            
+
             return (
               <button
                 key={idx}
@@ -407,13 +452,19 @@ const TimeEntries = () => {
                 <div style={styles.dayHeader}>
                   <span style={styles.dayName}>{dayName}</span>
                   {hasHours && (
-                    <span style={{
-                      ...styles.hoursChip,
-                      ...(isSelected ? styles.hoursChipActive : {}),
-                      ...(isOvertime && !isSelected ? styles.hoursChipOvertime : {}),
-                    }}>
+                    <span
+                      style={{
+                        ...styles.hoursChip,
+                        ...(isSelected ? styles.hoursChipActive : {}),
+                        ...(isOvertime && !isSelected
+                          ? styles.hoursChipOvertime
+                          : {}),
+                      }}
+                    >
                       {formatHoursCompact(dayHours)}h
-                      {isOvertime && <span style={styles.overtimeIcon}>⚡</span>}
+                      {isOvertime && (
+                        <span style={styles.overtimeIcon}>⚡</span>
+                      )}
                     </span>
                   )}
                 </div>
@@ -422,18 +473,24 @@ const TimeEntries = () => {
                   <div style={styles.progressContainer}>
                     <div style={styles.progressBar}>
                       {/* Regular hours (up to 8) */}
-                      <div style={{
-                        ...styles.progressFill,
-                        width: `${regularPercent}%`,
-                        ...(isSelected ? styles.progressFillActive : {}),
-                      }} />
+                      <div
+                        style={{
+                          ...styles.progressFill,
+                          width: `${regularPercent}%`,
+                          ...(isSelected ? styles.progressFillActive : {}),
+                        }}
+                      />
                       {/* Overtime hours (beyond 8) */}
                       {isOvertime && (
-                        <div style={{
-                          ...styles.progressFillOvertime,
-                          width: `${Math.min(overtimePercent, 100)}%`,
-                          ...(isSelected ? styles.progressFillOvertimeActive : {}),
-                        }} />
+                        <div
+                          style={{
+                            ...styles.progressFillOvertime,
+                            width: `${Math.min(overtimePercent, 100)}%`,
+                            ...(isSelected
+                              ? styles.progressFillOvertimeActive
+                              : {}),
+                          }}
+                        />
                       )}
                     </div>
                   </div>
@@ -448,7 +505,13 @@ const TimeEntries = () => {
           <div style={styles.addCard}>
             <div style={styles.addHeader}>
               <h3 style={styles.addTitle}>
-                {editingEntry ? "Edit Time Entry" : (isTimerMode ? (isRunning ? "Timer Running" : "Timer") : "Add Time")}
+                {editingEntry
+                  ? "Edit Time Entry"
+                  : isTimerMode
+                  ? isRunning
+                    ? "Timer Running"
+                    : "Timer"
+                  : "Add Time"}
               </h3>
               {isTimerMode && isRunning && (
                 <div style={styles.timerDisplay}>{formatTime(elapsedTime)}</div>
@@ -459,7 +522,13 @@ const TimeEntries = () => {
               <div style={styles.formRow}>
                 <select
                   value={formData.project_id}
-                  onChange={(e) => setFormData({ ...formData, project_id: e.target.value, task_id: "" })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      project_id: e.target.value,
+                      task_id: "",
+                    })
+                  }
                   style={styles.select}
                   disabled={isRunning}
                 >
@@ -473,7 +542,9 @@ const TimeEntries = () => {
 
                 <select
                   value={formData.task_id}
-                  onChange={(e) => setFormData({ ...formData, task_id: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, task_id: e.target.value })
+                  }
                   style={styles.select}
                   disabled={!formData.project_id || isRunning}
                 >
@@ -490,7 +561,9 @@ const TimeEntries = () => {
                 type="text"
                 placeholder="What did you work on?"
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
                 style={styles.notesInput}
                 disabled={isRunning}
               />
@@ -500,7 +573,9 @@ const TimeEntries = () => {
                   type="number"
                   placeholder="Hours (e.g., 2.5)"
                   value={formData.hours}
-                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, hours: e.target.value })
+                  }
                   style={styles.hoursInput}
                   step="0.25"
                   min="0"
@@ -510,12 +585,19 @@ const TimeEntries = () => {
               <div style={styles.formActions}>
                 {!isTimerMode || editingEntry ? (
                   <>
-                    <button style={styles.primaryBtn} onClick={() => handleSave()}>
+                    <button
+                      style={styles.primaryBtn}
+                      onClick={() => handleSave()}
+                    >
                       {editingEntry ? "Update Entry" : "Save Entry"}
                     </button>
                     {!editingEntry && (
-                      <button style={styles.secondaryBtn} onClick={handleStartTimer}>
-                        <span style={styles.btnIcon}>▶</span> Start Timer Instead
+                      <button
+                        style={styles.secondaryBtn}
+                        onClick={handleStartTimer}
+                      >
+                        <span style={styles.btnIcon}>▶</span> Start Timer
+                        Instead
                       </button>
                     )}
                   </>
@@ -526,7 +608,10 @@ const TimeEntries = () => {
                         <span style={styles.btnIcon}>■</span> Stop & Save
                       </button>
                     ) : (
-                      <button style={styles.startBtn} onClick={handleStartTimer}>
+                      <button
+                        style={styles.startBtn}
+                        onClick={handleStartTimer}
+                      >
                         <span style={styles.btnIcon}>▶</span> Start Timer
                       </button>
                     )}
@@ -559,7 +644,10 @@ const TimeEntries = () => {
         <div style={styles.entriesContainer}>
           <div style={styles.entriesHeader}>
             {!showAddForm && (
-              <button style={styles.addBtn} onClick={() => setShowAddForm(true)}>
+              <button
+                style={styles.addBtn}
+                onClick={() => setShowAddForm(true)}
+              >
                 <span style={styles.addIcon}>+</span>
                 <span>Add time entry</span>
               </button>
@@ -590,10 +678,14 @@ const TimeEntries = () => {
             <div style={styles.empty}>
               <div style={styles.emptyIcon}>📝</div>
               <p style={styles.emptyText}>
-                {projectFilter ? "No entries for this project" : "No time entries for this day"}
+                {projectFilter
+                  ? "No entries for this project"
+                  : "No time entries for this day"}
               </p>
               <p style={styles.emptyHint}>
-                {projectFilter ? "Try selecting a different project" : "Click 'Add time entry' to get started"}
+                {projectFilter
+                  ? "Try selecting a different project"
+                  : "Click 'Add time entry' to get started"}
               </p>
             </div>
           ) : (
@@ -604,27 +696,39 @@ const TimeEntries = () => {
                     <div style={styles.entryInfo}>
                       <div style={styles.entryProjectLine}>
                         <span style={styles.projectDot} />
-                        <span style={styles.projectName}>{getProjectName(entry.project_id)}</span>
+                        <span style={styles.projectName}>
+                          {getProjectName(entry.project_id)}
+                        </span>
                         {getTaskName(entry.task_id) && (
                           <>
                             <span style={styles.separator}>•</span>
-                            <span style={styles.taskName}>{getTaskName(entry.task_id)}</span>
+                            <span style={styles.taskName}>
+                              {getTaskName(entry.task_id)}
+                            </span>
                           </>
                         )}
                         {entry.is_billable === 1 && (
                           <span style={styles.billableBadge}>💰 Billable</span>
                         )}
-                        <span style={styles.timestamp}>{formatDateTime(entry.created_at)}</span>
+                        <span style={styles.timestamp}>
+                          {formatDateTime(entry.created_at)}
+                        </span>
                       </div>
                       {entry.notes && (
                         <div style={styles.entryNotes}>
-                          {entry.notes.replace(/\s*\[Start:.*?\]\s*/, "").replace(/\s*\(copy\)\s*$/, "")}
-                          {entry.notes.includes("(copy)") && <span style={styles.copyBadge}> (copy)</span>}
+                          {entry.notes
+                            .replace(/\s*\[Start:.*?\]\s*/, "")
+                            .replace(/\s*\(copy\)\s*$/, "")}
+                          {entry.notes.includes("(copy)") && (
+                            <span style={styles.copyBadge}> (copy)</span>
+                          )}
                         </div>
                       )}
                     </div>
                     <div style={styles.entryActions}>
-                      <span style={styles.entryHours}>{formatHours(entry.hours)}</span>
+                      <span style={styles.entryHours}>
+                        {formatHours(entry.hours)}
+                      </span>
                       <div style={styles.actionButtons}>
                         <button
                           style={styles.actionBtn}
@@ -743,7 +847,8 @@ const styles = {
     fontFamily: "monospace",
   },
   totalBadge: {
-    background: "linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%)",
+    background:
+      "linear-gradient(135deg, var(--primary-color) 0%, #ff8c42 100%)",
     padding: "8px 16px",
     borderRadius: "10px",
     display: "flex",

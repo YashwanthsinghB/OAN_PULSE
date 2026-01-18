@@ -52,7 +52,7 @@ const Login = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@oan_pulse.com"
+              placeholder="admin@oan-pulse.com"
               required
               style={styles.input}
               disabled={loading}
@@ -86,9 +86,9 @@ const Login = () => {
 
         <div style={styles.footer}>
           <p style={styles.footerText}>Test Accounts:</p>
-          <p style={styles.footerHint}>admin@oan_pulse.com / Password123!</p>
-          <p style={styles.footerHint}>manager@oan_pulse.com / Password123!</p>
-          <p style={styles.footerHint}>employee@oan_pulse.com / Password123!</p>
+          <p style={styles.footerHint}>admin@oan-pulse.com / Password123!</p>
+          <p style={styles.footerHint}>manager@oan-pulse.com / Password123!</p>
+          <p style={styles.footerHint}>employee@oan-pulse.com / Password123!</p>
         </div>
       </div>
     </div>
