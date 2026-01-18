@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import TimeEntries from "./pages/TimeEntries";
 import Clients from "./pages/Clients";
+import Users from "./pages/Users";
 
 function App() {
   return (
@@ -16,7 +17,7 @@ function App() {
           {/* Public route */}
           <Route path="/login" element={<Login />} />
           
-          {/* Protected routes */}
+          {/* Protected routes - All users */}
           <Route 
             path="/" 
             element={
@@ -46,6 +47,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Clients />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin-only routes */}
+          <Route 
+            path="/users" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <Users />
               </ProtectedRoute>
             } 
           />
