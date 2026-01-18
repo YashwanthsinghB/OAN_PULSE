@@ -11,11 +11,13 @@ export const getUser = async (id) => {
 };
 
 export const createUser = async (userData) => {
-  const response = await api.post("/users/", userData);
+  // Use custom endpoint that handles password hashing
+  const response = await api.post("/users/create", userData);
   return response.data;
 };
 
 export const updateUser = async (id, userData) => {
+  // Use custom endpoint that handles password hashing
   const response = await api.put(`/users/${id}`, userData);
   return response.data;
 };

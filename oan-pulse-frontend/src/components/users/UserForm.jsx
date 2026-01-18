@@ -86,6 +86,8 @@ const UserForm = ({ user, onSave, onCancel }) => {
         submitData.password = formData.password;
       }
 
+      console.log("Submitting user data:", submitData);
+      
       if (user) {
         // Update existing user
         await updateUser(user.user_id, submitData);
@@ -97,7 +99,10 @@ const UserForm = ({ user, onSave, onCancel }) => {
       onSave();
     } catch (error) {
       console.error("Error saving user:", error);
-      alert(error.response?.data?.message || "Failed to save user");
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to save user";
+      alert(`Failed to save user: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
