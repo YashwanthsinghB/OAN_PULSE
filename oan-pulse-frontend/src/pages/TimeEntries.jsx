@@ -8,8 +8,10 @@ import {
 import { getProjects } from "../services/projects";
 import { getTasks } from "../services/tasks";
 import Layout from "../components/common/Layout";
+import { useAuth } from "../contexts/AuthContext";
 
 const TimeEntries = () => {
+  const { user } = useAuth(); // Get logged-in user
   const [timeEntries, setTimeEntries] = useState([]);
   const [weekEntries, setWeekEntries] = useState({}); // Store all week's entries
   const [projects, setProjects] = useState([]);
@@ -138,12 +140,12 @@ const TimeEntries = () => {
       const isBillable = selectedProject?.is_billable || 0;
 
       const entryData = {
-        user_id: 1,
+        user_id: user?.user_id || 1, // Use logged-in user
         project_id: Number(formData.project_id),
         entry_date: selectedDate + "T00:00:00Z",
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
         is_billable: isBillable, // Inherited from project
-        created_by: 1,
+        created_by: user?.user_id || 1, // Use logged-in user
       };
 
       if (formData.task_id) {
@@ -189,12 +191,12 @@ const TimeEntries = () => {
       const isBillable = selectedProject?.is_billable || 0;
 
       const entryData = {
-        user_id: 1,
+        user_id: user?.user_id || 1, // Use logged-in user
         project_id: Number(entry.project_id),
         entry_date: selectedDate + "T00:00:00Z",
         hours: Number(parseFloat(entry.hours).toFixed(2)),
         is_billable: isBillable, // Inherited from project
-        created_by: 1,
+        created_by: user?.user_id || 1, // Use logged-in user
       };
 
       if (entry.task_id) {
