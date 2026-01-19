@@ -13,7 +13,7 @@ import Layout from "../components/common/Layout";
 
 const Team = () => {
   const { user } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { canManageTeam } = usePermissions();
   
   const [activeTab, setActiveTab] = useState("pending"); // pending, all, stats
   const [teamMembers, setTeamMembers] = useState([]);
@@ -39,7 +39,7 @@ const Team = () => {
   const [rejectionReason, setRejectionReason] = useState("");
 
   // Check permissions
-  if (!hasPermission(["ADMIN", "MANAGER"])) {
+  if (!canManageTeam()) {
     return (
       <Layout>
         <div style={styles.accessDenied}>
