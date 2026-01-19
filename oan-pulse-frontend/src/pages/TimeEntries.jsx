@@ -25,9 +25,9 @@ const TimeEntries = () => {
   const formatDateForOracle = (dateString) => {
     if (!dateString) return null;
     // If already in timestamp format, return as is
-    if (dateString.includes('T')) {
+    if (dateString.includes("T")) {
       // Ensure it ends with Z
-      return dateString.endsWith('Z') ? dateString : dateString + 'Z';
+      return dateString.endsWith("Z") ? dateString : dateString + "Z";
     }
     // Convert YYYY-MM-DD to YYYY-MM-DDTHH:MM:SSZ
     return `${dateString}T00:00:00Z`;
@@ -143,8 +143,24 @@ const TimeEntries = () => {
   const handleSave = async (timerHours = null) => {
     const hoursToSave = timerHours || formData.hours;
 
-    if (!formData.project_id || !hoursToSave) {
-      alert("Project and hours are required");
+    // Validation
+    if (!user?.user_id) {
+      alert("You must be logged in to save time entries");
+      return;
+    }
+
+    if (!formData.project_id) {
+      alert("Please select a project");
+      return;
+    }
+
+    if (!hoursToSave || parseFloat(hoursToSave) <= 0) {
+      alert("Please enter valid hours (greater than 0)");
+      return;
+    }
+
+    if (!selectedDate) {
+      alert("Please select a date");
       return;
     }
 
@@ -155,21 +171,33 @@ const TimeEntries = () => {
       );
       const isBillable = selectedProject?.is_billable || 0;
 
+      const formattedDate = formatDateForOracle(selectedDate);
+      if (!formattedDate) {
+        alert("Invalid date format. Please try again.");
+        return;
+      }
+
       const entryData = {
-        user_id: user?.user_id || 1, // Use logged-in user
+        user_id: Number(user.user_id), // Use logged-in user
         project_id: Number(formData.project_id),
-        entry_date: formatDateForOracle(selectedDate),
+        entry_date: formattedDate,
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
-        is_billable: isBillable, // Inherited from project
-        created_by: user?.user_id || 1, // Use logged-in user
+        is_billable: Number(isBillable), // Inherited from project
+        created_by: Number(user.user_id), // Use logged-in user
+        approval_status: 'PENDING', // Required: Set approval status
       };
 
       if (formData.task_id) {
         entryData.task_id = Number(formData.task_id);
       }
-      if (formData.notes) {
-        entryData.notes = formData.notes;
+      if (formData.notes && formData.notes.trim()) {
+        entryData.notes = formData.notes.trim();
       }
+
+      console.log(
+        "Saving time entry with data:",
+        JSON.stringify(entryData, null, 2)
+      );
 
       if (editingEntry) {
         // Update existing entry
@@ -184,7 +212,26 @@ const TimeEntries = () => {
       await fetchWeekData();
     } catch (error) {
       console.error("Error saving entry:", error);
-      alert("Error saving time entry");
+      console.error("Error details:", error.response?.data);
+
+      // Extract error message
+      let errorMessage = "Error saving time entry";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === "string") {
+          errorMessage = errorData;
+        } else if (errorData.details) {
+          errorMessage = errorData.details;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      alert(errorMessage);
     }
   };
 
@@ -215,6 +262,7 @@ const TimeEntries = () => {
         hours: Number(parseFloat(entry.hours).toFixed(2)),
         is_billable: isBillable, // Inherited from project
         created_by: user?.user_id || 1, // Use logged-in user
+        approval_status: 'PENDING', // Required: Set approval status
       };
 
       if (entry.task_id) {

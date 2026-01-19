@@ -100,6 +100,7 @@ const QuickTimer = ({ onSave }) => {
         hours: parseFloat(totalHours.toFixed(2)),
         notes: formData.notes || null,
         entry_date: entryDate,
+        approval_status: 'PENDING', // Required: Set approval status
       };
       
       if (formData.task_id) {
