@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import { getClients } from "../../services/clients";
 import { getUsers } from "../../services/users";
 
 const ProjectForm = ({ project, onSave, onCancel }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     client_id: "",
@@ -15,7 +17,7 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
     hourly_rate: "",
     is_billable: 1,
     status: "ACTIVE",
-    created_by: 1,
+    created_by: user?.user_id || null,
   });
   const [clients, setClients] = useState([]);
   const [users, setUsers] = useState([]);
@@ -37,10 +39,16 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
         hourly_rate: project.hourly_rate || "",
         is_billable: project.is_billable !== undefined ? project.is_billable : 1,
         status: project.status || "ACTIVE",
-        created_by: project.created_by || 1,
+        created_by: project.created_by || user?.user_id || null,
       });
+    } else if (user?.user_id) {
+      // Set created_by for new projects
+      setFormData(prev => ({
+        ...prev,
+        created_by: user.user_id,
+      }));
     }
-  }, [project]);
+  }, [project, user]);
 
   const fetchData = async () => {
     try {
@@ -83,12 +91,18 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
     e.preventDefault();
     if (!validate()) return;
 
+    // Ensure created_by is set to logged-in user
+    if (!user?.user_id) {
+      setErrors({ form: "You must be logged in to create a project" });
+      return;
+    }
+
     setLoading(true);
     try {
       const submitData = {
         ...formData,
         client_id: Number(formData.client_id),
-        created_by: Number(formData.created_by),
+        created_by: Number(user.user_id), // Always use logged-in user
         budget_hours: formData.budget_hours ? Number(formData.budget_hours) : null,
         budget_amount: formData.budget_amount ? Number(formData.budget_amount) : null,
         hourly_rate: formData.hourly_rate ? Number(formData.hourly_rate) : null,
@@ -99,6 +113,8 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
       await onSave(submitData);
     } catch (error) {
       console.error("Error saving project:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to save project";
+      setErrors({ form: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -106,6 +122,11 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
 
   return (
     <form onSubmit={handleSubmit} style={styles.form}>
+      {errors.form && (
+        <div style={styles.formError}>
+          {errors.form}
+        </div>
+      )}
       <div style={styles.formGrid}>
         <div style={styles.formGroup}>
           <label style={styles.label}>
@@ -365,6 +386,15 @@ const styles = {
     color: "#e74c3c",
     fontSize: "0.875rem",
     marginTop: "0.25rem",
+  },
+  formError: {
+    background: "#ffebee",
+    color: "#c62828",
+    padding: "12px 16px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    fontSize: "14px",
+    fontWeight: "500",
   },
   buttonGroup: {
     display: "flex",

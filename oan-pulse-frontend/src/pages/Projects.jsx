@@ -84,7 +84,12 @@ const Projects = () => {
                   setEditingProject(null);
                 } catch (error) {
                   console.error("Error saving project:", error);
-                  alert("Error saving project. Please try again.");
+                  const errorMessage = error.response?.data?.message || 
+                                     error.response?.data?.error || 
+                                     error.message || 
+                                     "Error saving project. Please check the console for details.";
+                  alert(errorMessage);
+                  throw error; // Re-throw so form can show error
                 }
               }}
               onCancel={() => {
