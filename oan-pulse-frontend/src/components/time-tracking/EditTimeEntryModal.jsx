@@ -173,7 +173,18 @@ const EditTimeEntryModal = ({ timeEntry, onSave, onCancel, isOpen }) => {
 
     setLoading(true);
     try {
-      const entryDate = formData.entry_date + "T00:00:00Z";
+      // Format date for Oracle (YYYY-MM-DDTHH:MM:SSZ)
+      const formatDateForOracle = (dateString) => {
+        if (!dateString) return null;
+        // If already in timestamp format, return as is
+        if (dateString.includes('T')) {
+          return dateString.endsWith('Z') ? dateString : dateString + 'Z';
+        }
+        // Convert YYYY-MM-DD to YYYY-MM-DDTHH:MM:SSZ
+        return `${dateString}T00:00:00Z`;
+      };
+      
+      const entryDate = formatDateForOracle(formData.entry_date);
       
       const submitData = {
         user_id: Number(formData.user_id),

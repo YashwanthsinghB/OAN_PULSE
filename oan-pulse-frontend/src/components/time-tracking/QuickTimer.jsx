@@ -80,8 +80,20 @@ const QuickTimer = ({ onSave }) => {
       setIsRunning(false);
       const totalHours = elapsedTime / 3600;
       
+      // Format date for Oracle (YYYY-MM-DDTHH:MM:SSZ)
+      const formatDateForOracle = (dateString) => {
+        if (!dateString) return null;
+        // If already in timestamp format, return as is
+        if (dateString.includes('T')) {
+          return dateString.endsWith('Z') ? dateString : dateString + 'Z';
+        }
+        // Convert YYYY-MM-DD to YYYY-MM-DDTHH:MM:SSZ
+        return `${dateString}T00:00:00Z`;
+      };
+      
       const today = new Date();
-      const entryDate = today.toISOString().split(".")[0] + "Z";
+      const todayStr = today.toISOString().split("T")[0]; // Get YYYY-MM-DD
+      const entryDate = formatDateForOracle(todayStr);
 
       const entryData = {
         project_id: Number(formData.project_id),

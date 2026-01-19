@@ -20,6 +20,18 @@ const TimeEntries = () => {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
+  // Helper function to format date for Oracle (YYYY-MM-DDTHH:MM:SSZ)
+  const formatDateForOracle = (dateString) => {
+    if (!dateString) return null;
+    // If already in timestamp format, return as is
+    if (dateString.includes('T')) {
+      // Ensure it ends with Z
+      return dateString.endsWith('Z') ? dateString : dateString + 'Z';
+    }
+    // Convert YYYY-MM-DD to YYYY-MM-DDTHH:MM:SSZ
+    return `${dateString}T00:00:00Z`;
+  };
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null); // Track which entry is being edited
   const [isTimerMode, setIsTimerMode] = useState(false);
@@ -146,7 +158,7 @@ const TimeEntries = () => {
       const entryData = {
         user_id: user?.user_id || 1, // Use logged-in user
         project_id: Number(formData.project_id),
-        entry_date: selectedDate + "T00:00:00Z",
+        entry_date: formatDateForOracle(selectedDate),
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
         is_billable: isBillable, // Inherited from project
         created_by: user?.user_id || 1, // Use logged-in user
@@ -199,7 +211,7 @@ const TimeEntries = () => {
       const entryData = {
         user_id: user?.user_id || 1, // Use logged-in user
         project_id: Number(entry.project_id),
-        entry_date: selectedDate + "T00:00:00Z",
+        entry_date: formatDateForOracle(selectedDate),
         hours: Number(parseFloat(entry.hours).toFixed(2)),
         is_billable: isBillable, // Inherited from project
         created_by: user?.user_id || 1, // Use logged-in user

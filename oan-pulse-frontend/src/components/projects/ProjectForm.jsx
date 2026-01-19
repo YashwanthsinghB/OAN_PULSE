@@ -99,6 +99,13 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
 
     setLoading(true);
     try {
+      // Convert date strings to ISO timestamp format for Oracle
+      const formatDateForOracle = (dateString) => {
+        if (!dateString) return null;
+        // Convert 'YYYY-MM-DD' to 'YYYY-MM-DDTHH:MM:SSZ'
+        return `${dateString}T00:00:00Z`;
+      };
+
       const submitData = {
         ...formData,
         client_id: Number(formData.client_id),
@@ -106,8 +113,8 @@ const ProjectForm = ({ project, onSave, onCancel }) => {
         budget_hours: formData.budget_hours ? Number(formData.budget_hours) : null,
         budget_amount: formData.budget_amount ? Number(formData.budget_amount) : null,
         hourly_rate: formData.hourly_rate ? Number(formData.hourly_rate) : null,
-        start_date: formData.start_date || null,
-        end_date: formData.end_date || null,
+        start_date: formatDateForOracle(formData.start_date),
+        end_date: formatDateForOracle(formData.end_date),
       };
 
       await onSave(submitData);
