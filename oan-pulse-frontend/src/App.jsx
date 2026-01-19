@@ -8,6 +8,7 @@ import Projects from "./pages/Projects";
 import TimeEntries from "./pages/TimeEntries";
 import Clients from "./pages/Clients";
 import Users from "./pages/Users";
+import Team from "./pages/Team";
 
 function App() {
   return (
@@ -47,6 +48,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <Clients />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Manager & Admin routes */}
+          <Route 
+            path="/team" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                <Team />
               </ProtectedRoute>
             } 
           />
