@@ -63,6 +63,10 @@ const Team = () => {
         getTeamMembers(),
         getPendingApprovals(),
       ]);
+      
+      console.log("Team Members:", members);
+      console.log("Pending Approvals:", pending);
+      
       setTeamMembers(members);
       setPendingApprovals(pending);
 

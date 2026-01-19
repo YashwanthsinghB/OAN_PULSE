@@ -184,7 +184,7 @@ const TimeEntries = () => {
         hours: Number(parseFloat(hoursToSave).toFixed(2)),
         is_billable: Number(isBillable), // Inherited from project
         created_by: Number(user.user_id), // Use logged-in user
-        approval_status: 'PENDING', // Required: Set approval status
+        approval_status: "PENDING", // Required: Set approval status
       };
 
       if (formData.task_id) {
@@ -262,7 +262,7 @@ const TimeEntries = () => {
         hours: Number(parseFloat(entry.hours).toFixed(2)),
         is_billable: isBillable, // Inherited from project
         created_by: user?.user_id || 1, // Use logged-in user
-        approval_status: 'PENDING', // Required: Set approval status
+        approval_status: "PENDING", // Required: Set approval status
       };
 
       if (entry.task_id) {
