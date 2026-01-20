@@ -4,15 +4,21 @@ A modern, professional time tracking application built with React and Oracle Dat
 
 ## 🚀 Features
 
-- **Intuitive Time Tracking** - Beautiful, space-efficient interface that surpasses Harvest
-- **Unified Timer + Manual Entry** - Switch seamlessly between timer and manual time entry
-- **Week Calendar View** - Modern week navigation with visual day selection
-- **Project & Task Management** - Organize work by projects and tasks
+### ✅ **Implemented:**
+- **User Authentication** - Login/logout with session management
+- **Role-Based Access Control** - Admin, Manager, Employee roles
+- **Time Tracking** - Manual entry and timer functionality
+- **Project Management** - Create and manage projects
 - **Client Management** - Track clients and their projects
-- **Real-time Timer** - Live timer with auto-save functionality
-- **Dashboard Analytics** - Overview of time tracked and project status
-- **Oracle Database Backend** - Robust, enterprise-grade data storage
-- **REST API** - Oracle APEX REST services for seamless data access
+- **Team Management** - Managers can approve/reject time entries
+- **User Management** - Admin can create/edit users
+- **Week Calendar View** - Modern week navigation
+- **Approval Workflow** - Time entry approval system
+
+### 🚧 **In Progress:**
+- **Project Assignments** - Assign employees/managers to projects
+- **Task Management** - Create tasks for projects
+- **Filtered Views** - Employees see only assigned projects
 
 ## 🛠️ Tech Stack
 
@@ -21,177 +27,163 @@ A modern, professional time tracking application built with React and Oracle Dat
 - **Vite** - Lightning-fast build tool
 - **React Router DOM** - Client-side routing
 - **Axios** - HTTP client for API calls
-- **Modern CSS** - Harvest-inspired design system
+- **Context API** - Global state management
 
 ### Backend
 - **Oracle Database** - Enterprise-grade database
-- **Oracle APEX** - REST Data Services (ORDS)
-- **PL/SQL** - Database logic and triggers
+- **Oracle APEX** - REST Data Services
+- **PL/SQL** - Database logic and business rules
 
 ## 📦 Project Structure
 
 ```
 OAN_PULSE/
-├── database_setup.sql              # Complete database schema
+├── database_setup.sql              # Core database schema
+├── auth_setup.sql                  # Authentication tables & functions
+├── user_api_backend.sql           # User management API
+├── manager_features_schema.sql     # Manager approval workflow
+├── manager_api_backend.sql        # Manager team API
+├── project_assignments_schema.sql  # Project team assignments
+├── project_team_api_backend.sql   # Project team management API
+├── CURRENT_SYSTEM_GUIDE.md         # Current system documentation
+├── PROJECT_ASSIGNMENTS_GUIDE.md    # Project assignments guide
+├── AUTHENTICATION_COMPLETE.md     # Auth implementation details
+├── USER_MANAGEMENT_COMPLETE.md    # User management details
 ├── oan-pulse-frontend/            # React frontend application
 │   ├── src/
-│   │   ├── components/           # Reusable components
-│   │   │   ├── common/          # Layout components
-│   │   │   ├── clients/         # Client management
-│   │   │   ├── projects/        # Project management
-│   │   │   └── time-tracking/   # Time tracking components
-│   │   ├── pages/               # Page components
-│   │   ├── services/            # API services
-│   │   ├── App.jsx              # Main app component
-│   │   ├── main.jsx             # Entry point
-│   │   └── index.css            # Global styles
-│   ├── .env                      # Environment variables
-│   ├── package.json
-│   ├── vite.config.js
-│   └── index.html
+│   │   ├── components/            # Reusable components
+│   │   ├── pages/                 # Page components
+│   │   ├── services/              # API services
+│   │   ├── contexts/              # React contexts
+│   │   └── hooks/                 # Custom hooks
+│   └── package.json
 └── README.md
 ```
 
-## 🚦 Getting Started
+## 🚦 Quick Start
 
-### Prerequisites
-- Node.js 16+ and npm
-- Oracle Database (or Oracle Cloud)
-- Oracle APEX (for REST services)
+### 1. Database Setup
 
-### Database Setup
+Run these SQL scripts in order in **APEX SQL Workshop**:
 
-1. Connect to your Oracle Database
-2. Run the complete setup script:
 ```sql
+-- 1. Core schema
 @database_setup.sql
+
+-- 2. Authentication
+@auth_setup.sql
+
+-- 3. User management API
+@user_api_backend.sql
+
+-- 4. Manager features
+@manager_features_schema.sql
+@manager_api_backend.sql
+
+-- 5. Project assignments (new)
+@project_assignments_schema.sql
+@project_team_api_backend.sql
 ```
 
-This will create:
-- All tables (users, clients, projects, tasks, time_entries, etc.)
-- Indexes and constraints
-- Triggers for timestamps
-- Views for reporting
-- REST API endpoints via ORDS
+### 2. APEX REST Services
 
-### Frontend Setup
+Create REST modules in APEX:
+- `auth` - Authentication endpoints
+- `users` - User management
+- `manager` - Manager team features
+- `projects`, `clients`, `time-entries`, `tasks` - Auto-REST enabled
 
-1. Navigate to the frontend directory:
+See `CURRENT_SYSTEM_GUIDE.md` for detailed setup.
+
+### 3. Frontend Setup
+
 ```bash
 cd oan-pulse-frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Configure environment variables:
-```bash
-# Update .env with your API endpoint
-VITE_API_BASE_URL=https://your-apex-instance.com/ords/your_schema
-VITE_APP_NAME=OAN Pulse
-```
-
-4. Start the development server:
-```bash
 npm run dev
 ```
 
-5. Open http://localhost:3000
+Configure `.env`:
+```
+VITE_API_BASE_URL=https://oracleapex.com/ords/oan_trial
+VITE_APP_NAME=OAN Pulse
+```
 
-## 🎨 Features Overview
+## 👥 User Roles
 
-### Time Tracking
-- **Week Calendar** - Visual navigation with day selection
-- **Add Time Entry** - Unified form with timer/manual toggle
-- **Live Timer** - Real-time tracking with project selection
-- **Entry Cards** - Clean, color-coded time entries
-- **Daily Total** - Track progress towards daily goals
+### **Admin**
+- Full system access
+- User management
+- Project/client management
+- View all time entries
+- Team management features
 
-### Project Management
-- Create and manage projects
-- Assign to clients
-- Set budgets and hourly rates
-- Track billable/non-billable time
+### **Manager**
+- View team members
+- Approve/reject time entries
+- View team statistics
+- Project/client management
+- Log own time
 
-### Client Management
-- Maintain client database
-- Link projects to clients
-- Track client-specific metrics
-
-### Dashboard
-- Summary statistics
-- Recent activity
-- Quick access to key features
+### **Employee**
+- Log time entries
+- View own entries
+- See assigned projects only (coming soon)
+- Edit/delete own entries
 
 ## 📊 Database Schema
 
-Key tables:
-- `oan_pulse_users` - User authentication and profiles
-- `oan_pulse_clients` - Client information
-- `oan_pulse_projects` - Project details and budgets
-- `oan_pulse_tasks` - Task breakdown
-- `oan_pulse_time_entries` - Time tracking records
-- `oan_pulse_timer_sessions` - Active timer sessions
-- `oan_pulse_expenses` - Expense tracking
+### Core Tables
+- `oan_pulse_users` - Users with roles
+- `oan_pulse_clients` - Clients
+- `oan_pulse_projects` - Projects with manager assignments
+- `oan_pulse_tasks` - Tasks for projects
+- `oan_pulse_time_entries` - Time entries with approval status
+- `oan_pulse_project_team_members` - Project assignments
+- `oan_pulse_user_sessions` - Authentication sessions
+- `oan_pulse_approval_history` - Approval audit trail
 
-All objects are prefixed with `oan_pulse_` for consistency.
+### Key Relationships
+- Users → Managers (manager_id)
+- Projects → Managers (project_manager_id)
+- Projects → Team Members (project_team_members table)
+- Time Entries → Approval Status (PENDING/APPROVED/REJECTED)
 
 ## 🔒 Security
 
-- JWT-based authentication (planned)
-- Role-based access control (ADMIN, MANAGER, EMPLOYEE)
-- Secure API endpoints
-- Password hashing
-- Input validation
+- ✅ Session-based authentication
+- ✅ Password hashing (DBMS_UTILITY.GET_HASH_VALUE)
+- ✅ Role-based access control
+- ✅ Protected routes
+- ✅ Token-based API authentication
+
+## 📚 Documentation
+
+- **CURRENT_SYSTEM_GUIDE.md** - Complete system overview
+- **PROJECT_ASSIGNMENTS_GUIDE.md** - Project team management
+- **AUTHENTICATION_COMPLETE.md** - Auth implementation
+- **USER_MANAGEMENT_COMPLETE.md** - User management details
 
 ## 🚀 Deployment
 
-### Frontend (Vite)
+### Frontend
 ```bash
 npm run build
+# Deploy dist/ folder to hosting service
 ```
-Deploy the `dist` folder to your hosting service.
 
 ### Backend
-Oracle Database and APEX are already production-ready.
-Configure APEX REST services for production use.
+Oracle Database and APEX are production-ready. Configure APEX REST services for production.
 
-## 📝 Future Enhancements
+## 📝 Next Steps
 
-- [ ] User authentication and authorization
-- [ ] Reports and analytics
-- [ ] Export functionality (CSV, PDF)
-- [ ] Expense tracking
-- [ ] Invoicing
-- [ ] Team management
-- [ ] Mobile responsive design
-- [ ] Dark mode
-- [ ] Notifications
-- [ ] Integration with other tools
-
-## 👨‍💻 Development
-
-Built with modern best practices:
-- Component-based architecture
-- Separation of concerns
-- RESTful API design
-- Responsive UI
-- Clean, maintainable code
-
-## 📄 License
-
-Proprietary - All rights reserved
-
-## 🤝 Contributing
-
-This is a private project. Contact the maintainer for contribution guidelines.
-
-## 📧 Contact
-
-For questions or support, contact the development team.
+1. ✅ Complete project assignments UI
+2. ✅ Task management UI
+3. ✅ Filter projects/tasks for employees
+4. ⏳ Reports and analytics
+5. ⏳ Export functionality
+6. ⏳ Email notifications
 
 ---
 
-**OAN Pulse** - The modern way to track time. Built to replace Harvest with a better, more affordable solution.
+**OAN Pulse** - Modern time tracking, built to replace Harvest.
